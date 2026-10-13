@@ -1,4 +1,16 @@
-# Local verification
+# Verification
+
+## GitHub Actions verification — 14 October 2026
+
+[Linux CI run 38459451301](https://github.com/badrilogaram/order-payment-workflow/actions/runs/38459451301) passed for source commit `52236ba4a447cf3f9ff82ba272ad87b155cd55d9` using Java 21 and Python 3.12.
+
+- Maven verification passed all **47 tests**: 20 order-service tests and 27 payment-simulator tests, with zero failures, errors, or skipped tests.
+- The packaged application smoke runner passed **all 23 checks**, including provider restart recovery, order persistence, inventory persistence, and queued-command processing after restart.
+- The smoke runner reported `success: true` and `processesStopped: true`. Test reports, coverage reports, and packaged application results were uploaded as workflow artifacts.
+
+This Linux run resolves the packaged restart-verification gap from the earlier restricted Windows run below. It does not add evidence for Docker execution, real payments, load testing, or production deployment. The date above is in India Standard Time; GitHub records the run on 13 October in UTC.
+
+## Earlier local verification
 
 Verified on **10 October 2026**, on Windows with Java 21.0.12.1, Maven 3.10.0 and Spring Boot 4.1.1.
 
@@ -41,17 +53,17 @@ The runner forcibly terminated its own payment process and reopened the same dat
 
 The initial abrupt-stop check exposed loss of recent records with H2's deferred writes. Both default file-database URLs now use `WRITE_DELAY=0`, and the payment-record persistence check passed with that setting. Preserve it when overriding a file URL. See [H2 durability documentation](https://h2database.github.io/html/advanced.html#durability_problems).
 
-### Remaining restart verification
+### Earlier Windows restart limitation
 
 After restarting the payment process, H2 opened the existing database read-only, so the recovery payment returned HTTP 500 and the order returned to review. A separate probe found `File.canWrite()=true`, `Files.isWritable()=false`, and successful open-for-write on that same file. H2 2.4.240 uses `Files.isWritable()` when reopening an existing database and selects read-only mode when it returns false. The file was not marked read-only. An additional sandbox folder permission did not correct the probe result.
 
-This evidence points to the Windows restricted execution environment; it does not establish that the entire restart workflow passes outside it. The full smoke script remains unchanged in its expectations and exits nonzero in this environment. Recovery writes, order-process restart persistence and queued-command execution after restart still need a successful run outside the restricted shell. Integration tests cover the retry/state logic, but do not replace this packaged restart check. No application workaround disables H2's permission check.
+At the time of this local run, the evidence pointed to the Windows restricted execution environment but did not establish that the entire restart workflow passed outside it. Recovery writes, order-process restart persistence and queued-command execution after restart were subsequently verified by the successful Linux CI run above, using the same smoke-test expectations. No application workaround disables H2's permission check.
 
 To repeat after building, run `python scripts/smoke.py` with Java 21 available. Results and logs go under `target/smoke/`; the command exits nonzero on a failed check.
 
 ## Verification limits
 
-- The packaged smoke run was incomplete for the restart/write reason above; it must not be described as fully passing.
+- The earlier Windows packaged smoke run was incomplete for the restart/write reason above. The subsequent Linux run passed all 23 checks; keep these two results distinct.
 - Docker and Compose files were reviewed; Docker was unavailable, so container execution was not verified.
 - The local verification recorded here did not include a remote GitHub Actions run. Check the repository's Actions tab for subsequent CI results.
 - The official Maven wrapper is included. Its initial download could not finish in the restricted development shell because renaming its temporary download directory was denied; the successful build used installed Maven instead.
