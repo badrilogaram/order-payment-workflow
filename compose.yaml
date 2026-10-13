@@ -1,0 +1,32 @@
+services:
+  payment-simulator:
+    build:
+      context: .
+      target: payment-simulator
+    command: ["--server.address=0.0.0.0"]
+    environment:
+      PAYMENT_SIMULATOR_API_KEY: ${PAYMENT_API_KEY:-local-payment-key}
+    ports:
+      - "127.0.0.1:8091:8091"
+    volumes:
+      - payments-data:/app/data
+
+  order-service:
+    build:
+      context: .
+      target: order-service
+    command: ["--server.address=0.0.0.0"]
+    environment:
+      ORDERFLOW_API_KEY: ${ORDERFLOW_API_KEY:-local-order-key}
+      PAYMENT_BASE_URL: http://payment-simulator:8091
+      PAYMENT_API_KEY: ${PAYMENT_API_KEY:-local-payment-key}
+    ports:
+      - "127.0.0.1:8090:8090"
+    volumes:
+      - orders-data:/app/data
+    depends_on:
+      - payment-simulator
+
+volumes:
+  orders-data:
+  payments-data:

@@ -1,0 +1,54 @@
+name: Build and test
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Build and test both services
+        run: |
+          chmod +x mvnw
+          ./mvnw -B -ntp verify
+      - name: Set up Python for packaged application checks
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify packaged workflows and restart recovery
+        run: python scripts/smoke.py
+      - name: Save packaged application results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: packaged-application-results
+          path: |
+            target/smoke/**/result.json
+            target/smoke/**/*.log
+          if-no-files-found: warn
+      - name: Save test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: '**/target/surefire-reports/'
+          if-no-files-found: warn
+      - name: Save coverage reports
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-reports
+          path: '**/target/site/jacoco/'
+          if-no-files-found: warn

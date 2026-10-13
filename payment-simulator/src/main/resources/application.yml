@@ -1,0 +1,30 @@
+server:
+  address: ${SERVER_ADDRESS:127.0.0.1}
+  port: ${SERVER_PORT:8091}
+  shutdown: graceful
+spring:
+  application:
+    name: orderflow-payment-simulator
+  jackson:
+    deserialization:
+      accept-float-as-int: false
+  threads:
+    virtual:
+      enabled: true
+  datasource:
+    url: ${PAYMENT_DB_URL:jdbc:h2:file:./data/payment-simulator;DB_CLOSE_ON_EXIT=FALSE;LOCK_TIMEOUT=5000;WRITE_DELAY=0}
+    username: sa
+    password: ${PAYMENT_DB_PASSWORD:}
+  sql:
+    init:
+      mode: always
+payment-simulator:
+  api-key: ${PAYMENT_SIMULATOR_API_KEY:local-payment-key}
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: never

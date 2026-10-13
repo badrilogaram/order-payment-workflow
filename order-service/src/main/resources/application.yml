@@ -1,0 +1,36 @@
+spring:
+  application:
+    name: orderflow-orders
+  jackson:
+    deserialization:
+      accept-float-as-int: false
+  threads:
+    virtual:
+      enabled: true
+  datasource:
+    url: ${ORDERS_DB_URL:jdbc:h2:file:./data/orders;DB_CLOSE_ON_EXIT=FALSE;WRITE_DELAY=0}
+    username: sa
+    password: ${ORDERS_DB_PASSWORD:}
+  sql:
+    init:
+      mode: always
+server:
+  address: 127.0.0.1
+  port: 8090
+  shutdown: graceful
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+orderflow:
+  api-key: ${ORDERFLOW_API_KEY:local-order-key}
+  payment-base-url: ${PAYMENT_BASE_URL:http://127.0.0.1:8091}
+  payment-api-key: ${PAYMENT_API_KEY:local-payment-key}
+  request-timeout: 1s
+  max-attempts: 3
+  retry-backoff: 500ms
+  lease-duration: 5s
+  worker:
+    enabled: true
+    poll-delay-ms: 250
